@@ -1,84 +1,94 @@
 import React, { useState } from "react";
+import { Button } from "./ui/button";
+import { BeatLoader } from "react-spinners";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "./ui/button";
-import { BeatLoader } from "react-spinners";
-import { Input } from "./ui/input";
 import * as Yup from "yup";
-import TError from "./error";
+import { Input } from "./ui/input";
+import { Formik, useFormik } from "formik";
+import { LogIn } from "../db/apiAuth";
+
+
+
+const initialValues = { email: "", password: "" };
+const schema = Yup.object().shape({
+  email: Yup.string().email("Invalid Email").required("required"),
+  password: Yup.string()
+    .min(6, "minimum 6 characters required")
+    .required("required"),
+});
 
 const Login = () => {
-  const [loading, setloading] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [errors, setError] = useState([]);
-  const handleInput = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const handleLogin = async () => {
-    setError([]);
-    try {
-      const schema = Yup.object().shape({
-        email: Yup.string().email("Invalid Email").required("*Required"),
-        password: Yup.string()
-          .min(6, "Minimum 6 character password required")
-          .required("*Required"),
-      });
-      await schema.validate(formData, { abortEarly: false });
-    } catch (error) {
-      const newErrors = {};
-      error?.inner?.forEach((err) => {
-        newErrors[err.path] = err.message;
-      });
-      setError(newErrors);
-    }
-  };
+  const [loading, setLoading]=useState(false);
+  const { touched,values, handleBlur, handleChange, handleSubmit, errors } =
+    useFormik({
+      initialValues: initialValues,
+      validationSchema: schema,
+      onSubmit:async (val ) => {
+        try {
+          setLoading(true)
+         const res= await LogIn(val)
+          console.log('response',res);
+          
+        } catch (error) {
+          console.log(error.message);
+          
+        }finally{
+          setLoading(false)
+        }
+      },
+    });
 
   return (
     <div>
+        <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
-            {" "}
-            to your account if you alrerady have one
-          </CardDescription>
+          <CardTitle>Login </CardTitle>
+          <CardDescription>to access this website</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="space-y-1">
             <Input
+              name="email"
               type="email"
-              placeholder="Enter your Email....."
-              onChange={handleInput}
+              placeholder="Enter Your email"
+              value={values.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
             />
-            {errors.email && <TError message={errors.email} />}
+            {errors.email && touched.email ? <p>{errors.email}</p> : null}
           </div>
           <div className="space-y-1">
             <Input
+              name="password"
               type="password"
-              placeholder="Enter your Password....."
-              onChange={handleInput}
-            ></Input>
-            {errors.password && <TError message={errors.password} />}
+              placeholder="Enter Your password"
+              value={values.password}
+              onChange={handleChange}
+            />
+            {errors.password && touched.password ? (
+              <p>{errors.password}</p>
+            ) : null}
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleLogin}>
-            {loading ? <BeatLoader size={10} color="red" /> : "Login"}
-          </Button>
+        
+            <Button
+              type="submit"
+            >
+              {loading ? <BeatLoader size={7} color="green" /> : "Login"}
+            </Button>
+          
         </CardFooter>
       </Card>
+      </form>
     </div>
   );
 };
